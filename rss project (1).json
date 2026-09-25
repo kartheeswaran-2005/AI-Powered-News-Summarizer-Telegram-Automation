@@ -1,0 +1,204 @@
+{
+  "name": "rss project",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            },
+            {
+              "hour": 7
+            }
+          ]
+        },
+        "feedUrl": "http://www.dailythanthi.com/feed"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        368
+      ],
+      "id": "0966a2d6-5f97-4fb6-a8fe-32b07aa7b1f0",
+      "name": "RSS Feed Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional news summarization assistant.\n\nBelow is a news article received from an RSS feed.\n\nNews Title:\n{{$json.title}}\n\nNews Content:\n{{$json[\"content:encodedSnippet\"]}}\n\nPublished Date:\n{{$json.pubDate}}\n\nNews Link:\n{{$json.link}}\n\nYour task:\n1. Read the news content.\n2. Create a short and clear summary in 3 to 5 sentences.\n3. Include only the important information.\n4. Do not add information that is not present in the article.\n5. Use simple English.\n6. Include the news title.\n7. Include the original news link.\n\nReturn the result in exactly this format:\n\n📰 NEWS UPDATE\n\nTitle: {{$json.title}}\n\nSummary:\n[Write the 3-5 sentence summary here]\n\n🔗 Read More:\n{{$json.link}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -208,
+        368
+      ],
+      "id": "83068fb7-d713-4dfe-9761-c9b843a2f8e9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -256,
+        560
+      ],
+      "id": "29dee09b-026c-41ac-aafe-d8a908af32dc",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xJUyKJFRFeHcu8aZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "=6353667443",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        368
+      ],
+      "id": "b47e435e-80c6-43c3-8ab3-eaf9e96d4309",
+      "name": "Send a text message",
+      "webhookId": "8bfda679-3203-4e7e-84cc-dceeeb5ec144",
+      "credentials": {
+        "telegramApi": {
+          "id": "joeZRYN6yntCXnga",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "33e308b9-adfb-4cc6-8c25-b1cb647dcda1",
+              "name": "title",
+              "value": "={{ $('RSS Feed Trigger').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "178309da-7594-486e-be9e-e5f0f16bfaaa",
+              "name": "summary ",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "1251a769-9c31-4329-b0e0-2115ad3d91df",
+              "name": "link",
+              "value": "={{ $('RSS Feed Trigger').item.json.link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        144,
+        368
+      ],
+      "id": "18cfe308-caa0-459f-891d-9e7214701c4e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -160,
+        624
+      ],
+      "id": "f5009010-e881-4b7d-a223-69bb1a6f3651",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSS Feed Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "daff4c90-2d1b-461e-bdd0-153bebbc3c4f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3be0ce39deec7e0f19fffae33ddaade58a41189e81fb92bed8ced58f30bf90f8"
+  },
+  "nodeGroups": [],
+  "id": "i6JNl7FsbP7I5IPr",
+  "tags": []
+}
